@@ -13,7 +13,7 @@ def run_benchmark(predictor, features, W):
     i = 0
     n_windows = len(features) - W
     times = []
-    cuda = predictor.device == 'cuda'
+    cuda = predictor.device.type == 'cuda'
     for _ in tqdm.tqdm(range(n_windows), desc="Inferencing"):
         window = features[i:i+W]
         if cuda: torch.cuda.synchronize()
@@ -62,8 +62,9 @@ def main():
 
     features = np.column_stack([s1_txp, s2_txp, s3_txp])
 
-    times_gpu = run_benchmark(predictor_gpu, features, W)
     times_cpu = run_benchmark(predictor_cpu, features, W)
+    times_gpu = run_benchmark(predictor_gpu, features, W)
+
 
     _, (ax1, ax2) = plt.subplots(1,2, figsize=(10,5))
     ax1.plot(times_gpu[1:], 'r.', alpha=0.5, label="GPU")
@@ -75,8 +76,8 @@ def main():
     ax1.set_ylabel("Time (s)")
     ax1.grid(True)
     ax1.legend()
-    ax2.hist(times_gpu[1:], bins=100, alpha=0.5, label="GPU")
-    ax2.hist(times_cpu[1:], bins=100, alpha=0.5, label="CPU")
+    ax2.hist(times_gpu[1:], bins=50, alpha=0.5, label="GPU")
+    ax2.hist(times_cpu[1:], bins=50, alpha=0.5, label="CPU")
     ax2.set_title("Inference Time Distribution")
     ax2.set_xlabel("Time (s)")
     ax2.set_ylabel("Frequency")

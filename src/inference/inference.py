@@ -17,7 +17,7 @@ import platform
 import random
 
 # Check system OS for appropriate Mamba implementation
-system_os = platform.system()
+#system_os = platform.system()
 
 
 
@@ -26,10 +26,13 @@ class PolarizationPredictor():
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
-            self.device = device
+            self.device = torch.device(device)
         print("PyTorch version:", torch.__version__)
         print("Current device:", self.device)
-
+        if self.device.type == 'cuda':
+            system_os = 'Linux'
+        if self.device.type == 'cpu':
+            system_os = "CPU"
         saved_model = torch.load(model_path, map_location=self.device, weights_only=False)
 
         model_config = saved_model["config"]
