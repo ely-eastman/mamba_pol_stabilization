@@ -173,6 +173,18 @@ if __name__ == '__main__':
     best_val_loss = float('inf')
     best_model_path = 'results/best_model_MAMBA.pt'
 
+    # Config required to reconstruct the model for inference
+    model_config = {
+        "model_type": "PolarizationMambaSO3",
+        "input_dim": 3,
+        "d_model": args.dim,
+        "n_layers": args.layers,
+        "window_size": window_size,
+        "system": system_os,
+        "wavelength_range": args.wavelength_range,
+        "loss": args.loss,
+    }
+
     patience = 10
     static_epochs = 0
     for epoch in range(epochs):
@@ -213,7 +225,11 @@ if __name__ == '__main__':
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             static_epochs = 0
-            torch.save(model.state_dict(), best_model_path)
+            torch.save({
+                "state_dict": model.state_dict(),
+                "config": model_config,
+                "best_val_loss": best_val_loss,
+            }, best_model_path)
             tqdm.write(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f} | LR: {current_lr:.2e} | * Best model saved")
         else:
             static_epochs += 1
@@ -240,7 +256,13 @@ if __name__ == '__main__':
     plt.savefig(f'results/MAMBA_convergence_{model_info}.png')
 
     # Load best validation model for final evaluation
-    model.load_state_dict(torch.load(best_model_path, weights_only=True))
+    checkpoint = torch.load(best_model_path, map_location=device, weights_only=False)
+    if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["state_dict"])
+        best_val_loss = checkpoint.get("best_val_loss", best_val_loss)
+    else:
+        # Backward compatible with older state_dict-only checkpoints
+        model.load_state_dict(checkpoint)
     print(f"Loaded best model (val loss: {best_val_loss:.6f}) for final evaluation on test set")
     model.eval()
     preds, actuals = [], []
