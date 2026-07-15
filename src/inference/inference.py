@@ -22,8 +22,11 @@ system_os = platform.system()
 
 
 class PolarizationPredictor():
-    def __init__(self, model_path):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, model_path, device=None):
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
         print("PyTorch version:", torch.__version__)
         print("Current device:", self.device)
 
